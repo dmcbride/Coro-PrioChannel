@@ -97,4 +97,8 @@ sub size {
     sum map { $_ ? scalar @$_ : 0 } @{$_[0]}[DATA..DATA + PRIO_MAX()-PRIO_MIN() + 1];
 }
 
+=back
+
+=cut
+
 1;
