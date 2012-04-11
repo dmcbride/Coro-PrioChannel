@@ -1,4 +1,7 @@
 Revision history for Coro-PrioChannel
 
 {{$NEXT}}
+        * Add github metadata
+
+0.001     2012-04-10
         * Initial revision.
