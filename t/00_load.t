@@ -6,4 +6,4 @@ for my $module (qw(
    use_ok($module);
 }
 
-done_testing;
+done_testing();

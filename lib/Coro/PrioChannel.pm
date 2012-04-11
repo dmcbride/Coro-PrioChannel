@@ -51,7 +51,8 @@ sub new {
 
 =item put
 
-Put the given scalar into the queue.
+Put the given scalar into the queue.  Optionally provide a priority between
+L<Coro>::PRIO_MIN and L<Coro>::PRIO_MAX.
 
 =cut
 

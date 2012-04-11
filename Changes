@@ -2,6 +2,8 @@ Revision history for Coro-PrioChannel
 
 {{$NEXT}}
         * Add github metadata
+        * Add some better documentation for put (hey, it's all relative)
+        * Add test for size method
 
 0.001     2012-04-10
         * Initial revision.

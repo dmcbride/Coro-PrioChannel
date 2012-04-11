@@ -1,3 +1,5 @@
+# stolen from Coro::Channel's tests
+
 $|=1;
 print "1..19\n";
 
