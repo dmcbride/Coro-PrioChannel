@@ -1,9 +1,13 @@
 Revision history for Coro-PrioChannel
 
 {{$NEXT}}
+        * Add optional minimum-priority-level to size. Need to figure it out
+          for get, too (blocking here is harder, as will be testing).
+
+0.002     2012-04-11
         * Add github metadata
         * Add some better documentation for put (hey, it's all relative)
         * Add test for size method
 
 0.001     2012-04-10
-        * Initial revision.
+        * Initial revision based nearly completely on Coro::Channel.
