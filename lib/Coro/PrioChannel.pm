@@ -20,6 +20,8 @@ The priorities are the same as for L<Coro> itself.
 
 Unlike Coro::Channel, you do have to load this module directly.
 
+=head1 METHODS
+
 =over 4
 
 =cut
