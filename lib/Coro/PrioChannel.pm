@@ -99,6 +99,11 @@ sub get {
 
 =item reprioritize
 
+Reprioritizes the queue, boosting the priority of elements that have been in
+the queue for longer than the reprioritization parameter (passed to the
+constructor). This method is called automatically by put() and should not need
+to be called directly in normal circumstances.
+
 =cut
 
 sub reprioritize {
