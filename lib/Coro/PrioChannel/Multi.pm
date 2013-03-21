@@ -43,17 +43,21 @@ use Scalar::Util qw(weaken);
 
 =item new
 
-Create a new channel with the given maximum size.  Giving a size of one
+Create a new multi-channel with the given maximum size.  Giving a size of one
 defeats the purpose of a priority queue.  However, with multiple listeners,
 this should ensure that each listener deals with the item before we add
 the next item.
 
 =cut
 
+sub LIM()  { 0 }
+sub CHAN() { 1 }
+
 sub new
 {
     my $class = shift;
-    my $self  = bless [], $class;
+    my $limit = shift;
+    my $self  = bless [$limit, []], $class;
 
     $self;
 }
@@ -72,14 +76,14 @@ list of listeners.  This method simply clears out the holes.
 sub clean
 {
     my $self = shift;
-    @$self = grep { defined } @$self;
+    @{$self->[CHAN]} = grep { defined } @{$self->[CHAN]};
 
     # when we pull out the refs this way, they're
     # no longer weakened, so re-weaking everything.
     # (easier than using splice to pull undef items out -
     #  if we get too many readers, we'll re-evaluate if this
     #  is slow.)
-    weaken($_) for @$self;
+    weaken($_) for @{$self->[CHAN]};
 }
 
 =item number_of_listeners
@@ -93,7 +97,7 @@ sub number_of_listeners
 {
     my $self = shift;
     $self->clean();
-    scalar @$self;
+    scalar @{$self->[CHAN]};
 }
 
 # debugging aid.
@@ -101,7 +105,7 @@ sub _status
 {
     my $self = shift;
     $self->clean();
-    'Channel=size :: ' . join ":", map { $_ . "=" . $self->[$_]->size() } 0..$#$self;
+    'Channel=size :: ' . join ":", map { $_ . "=" . $self->[CHAN][$_]->size() } 0..$#$self;
 }
 
 =item listen
@@ -122,8 +126,8 @@ that you issue a C<-E<gt>get> against.  For example:
 sub listen
 {
     my $self = shift;
-    my $channel = Coro::PrioChannel->new();
-    push @$self, $channel;
+    my $channel = Coro::PrioChannel->new($self->[LIM]);
+    push @{$self->[CHAN]}, $channel;
 
     $self->clean();
 
@@ -147,7 +151,7 @@ sub put
     # have to check if $_ was defined, but Coro eliminates
     # that possibility since nothing else really runs between
     # the clean() above and this (we don't cede)
-    $_->put(@_) for (@$self);
+    $_->put(@_) for (@{$self->[CHAN]});
 }
 
 1;
