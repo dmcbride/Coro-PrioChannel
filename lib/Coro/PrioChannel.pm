@@ -7,10 +7,10 @@ use warnings;
 =head1 SYNOPSIS
 
     use Coro::PrioChannel;
-    
+
     my $q = Coro::PrioChannel->new($maxsize);
     $q->put("xxx"[, $prio]);
-    
+
     print $q->get;
 
 =head1 DESCRIPTION
@@ -30,24 +30,31 @@ use Coro qw(:prio);
 use Coro::Semaphore ();
 
 use List::Util qw(first sum);
+use Time::HiRes qw(time);
 
-sub SGET() { 0 }
-sub SPUT() { 1 }
-sub DATA() { 2 }
-sub MAX()  { PRIO_MAX - PRIO_MIN + DATA + 1 }
+sub SGET()      { 0 }
+sub SPUT()      { 1 }
+sub REPRIO()    { 2 }
+sub NEXTCHECK() { 3 }
+sub DATA()      { 4 }
+sub MAX()       { PRIO_MAX - PRIO_MIN + DATA + 1 }
 
 =item new
 
 Create a new channel with the given maximum size.  Giving a size of one
-defeats the purpose of a priority queue.
+defeats the purpose of a priority queue.  Optionally specify the amount of
+time spent in the queue before an item's priority is boosted to avoid
+starvation.
 
 =cut
 
 sub new {
-    # we cheat, just like Coro::Channel.
+   # we cheat, just like Coro::Channel.
    bless [
       (Coro::Semaphore::_alloc 0), # counts data
       (Coro::Semaphore::_alloc +($_[1] || 2_000_000_000) - 1), # counts remaining space
+      $_[2], # reprioritization check time
+      (defined $_[2] ? (time + $_[2]) : undef), # last reprioritization check
       [], # initially empty
    ]
 }
@@ -59,8 +66,14 @@ L<Coro>::PRIO_MIN and L<Coro>::PRIO_MAX.
 
 =cut
 
+sub _put {
+   my $after = (time + $_[0]->[REPRIO]) if defined $_[0]->[REPRIO];
+   push @{$_[0][DATA + ($_[2]||PRIO_NORMAL) - PRIO_MIN()]}, [$_[1], $after];
+}
+
 sub put {
-   push @{$_[0][DATA + ($_[2]||PRIO_NORMAL()) - PRIO_MIN()]}, $_[1];
+   $_[0]->reprioritize;
+   _put @_;
    Coro::Semaphore::up   $_[0][SGET];
    Coro::Semaphore::down $_[0][SPUT];
 }
@@ -81,7 +94,38 @@ sub get {
 
    my $a = first { $_ && scalar @$_ } reverse @{$_[0]}[DATA..MAX];
 
-   ref $a ? shift @$a : undef;
+   ref $a ? shift(@$a)->[0] : undef;
+}
+
+=item reprioritize
+
+=cut
+
+sub reprioritize {
+    return unless defined $_[0]->[REPRIO];
+
+    my $now = time;
+    return unless $_[0]->[NEXTCHECK] <= $now;
+
+    my $q = $_[0];
+    foreach my $pri (PRIO_MIN .. PRIO_HIGH) {
+        my $next_pri = $pri + 1;
+        my $idx      = DATA + $pri - PRIO_MIN;
+        my @keep;
+
+        foreach my $item (@{$q->[$idx]}) {
+            if ($item->[1] <= $now) {
+                _put $q, $item->[0], $next_pri;
+            } else {
+                push @keep, $item;
+            }
+        }
+
+        $q->[$idx] = \@keep;
+    }
+    
+    $q->[NEXTCHECK] = $now + $q->[REPRIO];
+    return;
 }
 
 =item shutdown
