@@ -30,7 +30,7 @@ use Coro qw(:prio);
 use Coro::Semaphore ();
 
 use List::Util qw(first sum);
-use Time::HiRes qw(time);
+use AnyEvent ();
 
 sub SGET()      { 0 }
 sub SPUT()      { 1 }
@@ -54,7 +54,7 @@ sub new {
       (Coro::Semaphore::_alloc 0), # counts data
       (Coro::Semaphore::_alloc +($_[1] || 2_000_000_000) - 1), # counts remaining space
       $_[2], # reprioritization check time
-      (defined $_[2] ? (time + $_[2]) : undef), # last reprioritization check
+      (defined $_[2] ? (AnyEvent->now + $_[2]) : undef), # last reprioritization check
       [], # initially empty
    ]
 }
@@ -67,7 +67,7 @@ L<Coro>::PRIO_MIN and L<Coro>::PRIO_MAX.
 =cut
 
 sub _put {
-   my $after = (time + $_[0]->[REPRIO]) if defined $_[0]->[REPRIO];
+   my $after = (AnyEvent->now + $_[0]->[REPRIO]) if defined $_[0]->[REPRIO];
    push @{$_[0][DATA + ($_[2]||PRIO_NORMAL) - PRIO_MIN()]}, [$_[1], $after];
 }
 
@@ -109,7 +109,7 @@ to be called directly in normal circumstances.
 sub reprioritize {
     return unless defined $_[0]->[REPRIO];
 
-    my $now = time;
+    my $now = AnyEvent->now;
     return unless $_[0]->[NEXTCHECK] <= $now;
 
     my $q = $_[0];
