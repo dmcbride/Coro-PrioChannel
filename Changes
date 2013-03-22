@@ -2,6 +2,7 @@ Revision history for Coro-PrioChannel
 
 {{$NEXT}}
         + Add Coro::PrioChannel::Multi
+        + Queues now age items to prevent starvation
 
 0.003     2012-04-13
         + Add optional minimum-priority-level to size. Need to figure it out
