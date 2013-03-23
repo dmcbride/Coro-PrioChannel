@@ -154,4 +154,8 @@ sub put
     $_->put(@_) for (@{$self->[CHAN]});
 }
 
+=back
+
+=cut
+
 1;
