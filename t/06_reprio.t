@@ -18,5 +18,5 @@ $q->put(11, PRIO_NORMAL);
 
 foreach my $n (1 .. 11) {
     my $item = $q->get;
-    ok($n == $item, "$n == $item");
+    is($item, $n, '$n == $item');
 }
