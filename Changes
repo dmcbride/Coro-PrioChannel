@@ -1,6 +1,13 @@
 Revision history for Coro-PrioChannel
 
 {{$NEXT}}
+        ! Some testers don't have sub-second timers (?), such as
+          perl 5.17.{[789],10}, or darwin (?), causing a failure in
+          t/06_reprio.t.  Workaround in the test, not the code.
+          If you are missing sub-second timers, this is likely your
+          perl, not this module nor AnyEvent.
+
+0.004     2013-03-23
         + Add Coro::PrioChannel::Multi
         + Queues now age items to prevent starvation
 
